@@ -11,5 +11,5 @@ before_install:
   - docker build -t pos_ver_api POS_version_API
 
 script:
-  - docker run -it -d --rm j-worker:v8 /bin/sh -c "flask --version"
+  - docker run -it -d --rm pos_ver_api /bin/sh -c "flask --version"
 
