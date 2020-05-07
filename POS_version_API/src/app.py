@@ -5,6 +5,7 @@ from flask import Flask, jsonify, send_from_directory
 
 import utils
 from config import TEMPLATES_DIR, APP_AUTHOR, APP_VERSION
+from config import LIMITS
 
 APP = Flask(__name__)
 
@@ -22,12 +23,32 @@ def show_details():
 
 @APP.route('/latest')
 def get_latest_version():
-    limits = [None, ['1', '1', '999']]
     if 'TEMPLATES_DIR' in environ:
         templates_dir = environ['TEMPLATES_DIR']
     else:
         templates_dir = TEMPLATES_DIR
-    ver_latest, ver_parent = utils.find_latest_pos(templates_dir, limits)
+    ver_latest, ver_parent = utils.find_latest_pos(templates_dir, LIMITS)
+    return jsonify({'parent': ver_parent, 'version': ver_latest})
+
+
+@APP.route('/versions')
+def get_all_versions():
+    if 'TEMPLATES_DIR' in environ:
+        templates_dir = environ['TEMPLATES_DIR']
+    else:
+        templates_dir = TEMPLATES_DIR
+    versions = utils.find_latest_pos(templates_dir, LIMITS, dry_run=True)
+    status = bool(versions)
+    return jsonify({'status': status, 'versions': versions})
+
+
+@APP.route('/experimental/latest')
+def get_latest_version2():
+    if 'TEMPLATES_DIR' in environ:
+        templates_dir = environ['TEMPLATES_DIR']
+    else:
+        templates_dir = TEMPLATES_DIR
+    ver_latest, ver_parent = utils.experimental_find_latest_pos(templates_dir)
     return jsonify({'parent': ver_parent, 'version': ver_latest})
 
 

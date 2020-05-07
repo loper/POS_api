@@ -2,6 +2,7 @@
 from glob import glob
 from re import findall, split
 from statistics import mode
+from os.path import isdir
 
 from config import TEMPLATES_DIR
 
@@ -62,19 +63,23 @@ def get_full_version(version, ver_dirs, templ_dir):
     with open(version_desc_file[0], 'r') as ver_file:
         raw = ver_file.readlines()
     for line in raw:
-        found = findall(r'NAME="(.*)"', line.strip())
+        found = findall(r'NAME="(.*?)"', line.strip())
         if found:
             break
     return found[0]
 
 
-def find_latest_pos(templates_dir, ver_limits, filter_uncommon=False):
-    t_dirs = [f.split('/')[-1] for f in glob("{}/*pos*/*".format(templates_dir),
-                                             recursive=False)]
+def find_latest_pos(templates_dir, ver_limits, filter_uncommon=False, dry_run=False):
+    t_dirs = [f.split('/')[-1] for f in glob("{}/*pos-full*/*".format(templates_dir),
+                                             recursive=False) if isdir(f)]
 
     if not t_dirs:
         return None, None
     t_dirs.sort()
+
+    if dry_run:
+        return t_dirs
+
     versions = [split(r'\.|\-', ver.replace('v', '')) for ver in t_dirs]
 
     if filter_uncommon:
@@ -93,8 +98,44 @@ def find_latest_pos(templates_dir, ver_limits, filter_uncommon=False):
     return (ver_full or result[0], par_full or result[1])
 
 
+def experimental_find_latest_pos(templates_dir, dry_run=False):
+    t_dirs = [f.split('/')[-1] for f in glob("{}/*pos-full*/*".format(templates_dir),
+                                             recursive=False) if isdir(f)]
+
+    if not t_dirs:
+        return None, None
+    t_dirs.sort()
+
+    if dry_run:
+        return t_dirs
+
+    versions = experimental_sorting(t_dirs)
+
+    # clear out appending zeroes
+    result = [versions[-1], versions[-2]]
+    ver_full = get_full_version(result[0], t_dirs, templates_dir)
+    par_full = get_full_version(result[1], t_dirs, templates_dir)
+    return (ver_full or result[0], par_full or result[1])
+
+
+def experimental_sorting(data):
+    result = []
+    # versions = [ver.replace('v', '') for ver in data]
+    versions = [split(r'\.|\-|\_', ver.replace('v', '')) for ver in data]
+    versions = ['{}.{}.{}'.format(ver[0], ver[1], ver[2]) for ver in versions]
+    for ver in sorted(versions, key=lambda ver:
+                      (int(ver.split(".")[0]),
+                       int(ver.split(".")[1]),
+                       int(ver.split(".")[2]))):
+        result.append(ver)
+    return result
+
+
 if __name__ == "__main__":
-    LIMITS = [None, ['1', '1', '999']]
-    VER_LATEST, VER_PARENT = find_latest_pos(TEMPLATES_DIR, LIMITS)
+    LIMITS = [None, ['1', '99', '999']]
+    # VERS = find_latest_pos(TEMPLATES_DIR, LIMITS, dry_run=True)
+    # print(VERS)
+    print(find_latest_pos(TEMPLATES_DIR, LIMITS, dry_run=True))
+    VER_LATEST, VER_PARENT = experimental_find_latest_pos(TEMPLATES_DIR)
     print(VER_LATEST)
     print(VER_PARENT)
