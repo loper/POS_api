@@ -12,4 +12,6 @@ before_install:
 
 script:
   - docker run -it -d --rm pos_ver_api /bin/sh -c "flask --version"
-
+  - docker run -it -d --rm pos_ver_api /bin/sh -c "bash --version"
+  - docker run -it -d --rm pos_ver_api /bin/sh -c "vim --version"
+  - docker run -it -d --rm pos_ver_api /bin/sh -c "bash tests.sh"
